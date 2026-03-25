@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.pyo
+*.log
+backend/.env
+knowledge-graph/.env
+node_modules/
+.env
