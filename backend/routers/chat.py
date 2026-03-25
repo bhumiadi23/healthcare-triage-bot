@@ -4,8 +4,7 @@ POST /chat — Receive symptom text, extract entities via BioBERT NER, save to M
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from datetime import datetime, timezone
-import sys, os, uuid
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import asyncio, uuid
 from ner import extract_symptoms
 
 router = APIRouter()
@@ -23,8 +22,8 @@ async def chat(req: ChatRequest, request: Request):
 
     session_id = req.session_id or str(uuid.uuid4())
 
-    # BioBERT NER extraction
-    ner_result = extract_symptoms(req.user_input)
+    # BioBERT NER extraction — run in thread pool to avoid blocking event loop
+    ner_result = await asyncio.get_event_loop().run_in_executor(None, extract_symptoms, req.user_input)
     entities = ner_result["entities"]
     neo4j_nodes = ner_result["neo4j_nodes"]
 

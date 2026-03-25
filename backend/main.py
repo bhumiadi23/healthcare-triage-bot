@@ -11,8 +11,14 @@ from routers import chat, triage, report, history, graph
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.db     = await connect_db()
-    app.state.neo4j  = await connect_neo4j()
+    app.state.db = await connect_db()
+    try:
+        app.state.neo4j = await connect_neo4j()
+    except Exception as e:
+        print(f"[Neo4j] Warning: could not connect — {e}")
+        app.state.neo4j = None
+    from ner import load_biobert
+    load_biobert()
     yield
     await close_db()
     await close_neo4j()

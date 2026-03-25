@@ -239,7 +239,8 @@ def extract_symptoms(text: str) -> dict:
     ]
 
     mapped = _map_to_neo4j(all_entities)
-    neo4j_nodes = list({e["neo4j_node"] for e in mapped if e["neo4j_node"]})
+    mapped = [e for e in mapped if e.get("neo4j_node")]  # filter out unmatched
+    neo4j_nodes = list({e["neo4j_node"] for e in mapped})
 
     log.info(f"Final Neo4j nodes: {neo4j_nodes}")
 

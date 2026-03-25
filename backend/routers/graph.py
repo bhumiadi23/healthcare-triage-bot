@@ -12,8 +12,9 @@ router = APIRouter()
 
 @router.get("/symptom/{symptom_name}")
 async def get_diseases_by_symptom(symptom_name: str):
-    """Query Neo4j: which diseases does this symptom indicate?"""
     driver = get_neo4j()
+    if not driver:
+        raise HTTPException(status_code=503, detail="Graph database unavailable")
     async with driver.session() as session:
         result = await session.run("""
             MATCH (s:Symptom)-[r:INDICATES]->(d:Disease)-[:HAS_URGENCY]->(u:UrgencyLevel)
@@ -42,8 +43,9 @@ class GraphTriageRequest(BaseModel):
 
 @router.post("/query")
 async def graph_triage_query(req: GraphTriageRequest):
-    """Multi-symptom Neo4j query — returns ranked diseases + urgency."""
     driver = get_neo4j()
+    if not driver:
+        raise HTTPException(status_code=503, detail="Graph database unavailable")
     async with driver.session() as session:
         result = await session.run("""
             MATCH (s:Symptom)-[r:INDICATES]->(d:Disease)-[:HAS_URGENCY]->(u:UrgencyLevel)
@@ -77,11 +79,9 @@ async def graph_triage_query(req: GraphTriageRequest):
 
 @router.get("/demo/chest-pain")
 async def demo_chest_pain():
-    """
-    Live demo query — shows full node connections for 'chest pain':
-    Symptom → Diseases → UrgencyLevels + RiskFactors
-    """
     driver = get_neo4j()
+    if not driver:
+        raise HTTPException(status_code=503, detail="Graph database unavailable")
     async with driver.session() as session:
 
         # Diseases linked to chest pain
