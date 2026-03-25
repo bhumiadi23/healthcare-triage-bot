@@ -5,7 +5,7 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from datetime import datetime, timezone
 import sys, os, uuid
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "nlp"))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from ner import extract_symptoms
 
 router = APIRouter()
