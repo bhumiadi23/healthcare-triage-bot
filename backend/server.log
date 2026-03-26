@@ -54,3 +54,8 @@ INFO:     127.0.0.1:56481 - "POST /chat HTTP/1.1" 200 OK
 INFO:     127.0.0.1:58896 - "POST /chat HTTP/1.1" 200 OK
 INFO:     127.0.0.1:63925 - "POST /chat HTTP/1.1" 200 OK
 INFO:     127.0.0.1:64730 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54746 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50415 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52793 - "POST /chat HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:53422 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53757 - "POST /chat HTTP/1.1" 200 OK

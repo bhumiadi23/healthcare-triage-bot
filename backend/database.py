@@ -14,14 +14,6 @@ DB_NAME = os.getenv("MONGO_DB_NAME", "triage_db")
 client: AsyncIOMotorClient = None
 
 
-def get_client() -> AsyncIOMotorClient:
-    return AsyncIOMotorClient(MONGO_URI)
-
-
-def get_db():
-    return get_client()[DB_NAME]
-
-
 async def connect_db():
     global client
     client = AsyncIOMotorClient(MONGO_URI)

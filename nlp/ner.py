@@ -8,12 +8,14 @@ import re
 
 # ── Synonym map: conversational text → Neo4j Symptom node name ───────────────
 SYNONYM_MAP = {
-    # fever variants
+    # fever
     "hot":                    "fever",
     "burning up":             "fever",
     "temperature":            "fever",
     "running a fever":        "fever",
     "feeling feverish":       "fever",
+    "feverish":               "fever",
+    "fever":                  "fever",
     "chills":                 "high fever",
     "high temperature":       "high fever",
 
@@ -37,7 +39,9 @@ SYNONYM_MAP = {
     "chest pain":             "chest pain",
     "radiating chest":        "chest pain",
 
-    # breathing variants
+    # dyspnea / breathing
+    "dyspnea":                "shortness of breath",
+    "dyspnoea":               "shortness of breath",
     "can't breathe":          "shortness of breath",
     "cannot breathe":         "shortness of breath",
     "hard to breathe":        "shortness of breath",
@@ -66,11 +70,13 @@ SYNONYM_MAP = {
     "dry cough":              "cough",
     "wet cough":              "cough",
     "keep coughing":          "cough",
+    "cough":                  "cough",
 
     # sore throat
     "throat hurts":           "sore throat",
     "painful throat":         "sore throat",
     "scratchy throat":        "sore throat",
+    "sore throat":            "sore throat",
 
     # abdominal pain
     "stomach pain":           "abdominal pain",
@@ -86,12 +92,16 @@ SYNONYM_MAP = {
     "night sweats":           "sweating",
     "diaphoresis":            "sweating",
     "diaphoretic":            "sweating",
+    "sweating":               "sweating",
 
     # body aches
     "body hurts":             "body aches",
     "everything hurts":       "body aches",
     "muscle pain":            "body aches",
     "achy":                   "body aches",
+    "body aches":             "body aches",
+    "aching":                 "body aches",
+    "aches":                  "body aches",
 
     # runny nose
     "runny nose":             "runny nose",
@@ -112,10 +122,13 @@ SYNONYM_MAP = {
     # stroke symptoms
     "face drooping":          "facial drooping",
     "face is drooping":       "facial drooping",
+    "facial drooping":        "facial drooping",
     "arm is weak":            "arm weakness",
     "weak arm":               "arm weakness",
+    "arm weakness":           "arm weakness",
     "slurring":               "slurred speech",
     "speech is slurred":      "slurred speech",
+    "slurred speech":         "slurred speech",
 
     # fainting
     "passed out":             "syncope",
