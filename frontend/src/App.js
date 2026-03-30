@@ -30,7 +30,7 @@ const T = {
 };
 
 const URGENCY_CONFIG = {
-  CRITICAL: { color: T.red,    glow: T.redGlow,    icon: "🚨", label: "CRITICAL — Call 911",   accent: "hsl(0,90%,62%,0.12)"   },
+  CRITICAL: { color: T.red,    glow: T.redGlow,    icon: "🚨", label: "CRITICAL — Call 108",   accent: "hsl(0,90%,62%,0.12)"   },
   HIGH:     { color: T.orange, glow: T.orangeGlow, icon: "⚠️", label: "HIGH — Go to ER Now",   accent: "hsl(30,100%,60%,0.10)"  },
   MEDIUM:   { color: "hsl(50,100%,55%)", glow: "hsl(50,100%,55%,0.3)", icon: "🔶", label: "MEDIUM — Urgent Care", accent: "hsl(50,100%,55%,0.10)" },
   LOW:      { color: T.green,  glow: T.greenGlow,  icon: "✅", label: "LOW — See a Doctor",     accent: "hsl(148,70%,52%,0.10)"  },
@@ -133,11 +133,18 @@ function ScoreBar({ score, color }) {
 }
 
 // ── Bot Response ───────────────────────────────────────────────────────────
-function BotResponse({ msg }) {
+function BotResponse({ msg, sessionId }) {
   const { nodes, triage } = msg;
   const cfg = triage ? URGENCY_CONFIG[triage.urgency_level] : null;
   return (
     <div className="msgSlide" style={{ marginBottom: 20 }}>
+      
+      {/* The LLM Conversational Reply */}
+      {msg.text && (
+        <div style={{ ...S.botBubbleWrap }} className="revealUp">
+          <div style={S.botBubble}>{msg.text}</div>
+        </div>
+      )}
 
       {nodes?.length > 0 && (
         <div style={S.card} className="revealUp">
@@ -211,12 +218,193 @@ function BotResponse({ msg }) {
               })}
             </div>
           )}
+
+          <PdfDownloadButton sessionId={sessionId} />
         </div>
       )}
     </div>
   );
 }
 
+// ── PDF Download Button ───────────────────────────────────────────────────
+function PdfDownloadButton({ sessionId }) {
+  const [status, setStatus] = useState("idle"); // idle | loading | done | error
+
+  const download = async () => {
+    setStatus("loading");
+    try {
+      // Step 1: run triage
+      const triageRes = await axios.post(`${API}/triage`, {
+        session_id: sessionId,
+        symptoms: [],
+      }).catch(() => null);
+
+      // Step 2: generate report
+      await axios.post(`${API}/report`, { session_id: sessionId });
+
+      // Step 3: download PDF as blob
+      const pdfRes = await axios.get(`${API}/report/${sessionId}/pdf`, {
+        responseType: "blob",
+      });
+
+      const url  = window.URL.createObjectURL(new Blob([pdfRes.data], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href     = url;
+      link.download = `triage-report-${sessionId.slice(0, 8)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      setStatus("done");
+      setTimeout(() => setStatus("idle"), 3000);
+    } catch (e) {
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 3000);
+    }
+  };
+
+  const label = { idle: "📄 Download Report PDF", loading: "⏳ Generating...", done: "✅ Downloaded!", error: "❌ Failed — Try Again" };
+  const bg    = { idle: T.surface, loading: T.surface, done: "hsl(148,70%,52%,0.15)", error: "hsl(0,90%,62%,0.15)" };
+  const border= { idle: T.border, loading: T.purple, done: "hsl(148,70%,52%,0.5)", error: "hsl(0,90%,62%,0.5)" };
+  const color = { idle: T.textSec, loading: T.purple, done: T.green, error: T.red };
+
+  return (
+    <button
+      onClick={download}
+      disabled={status === "loading"}
+      style={{
+        width: "100%", padding: "11px 0", marginTop: 14,
+        background: bg[status], border: `1.5px solid ${border[status]}`,
+        borderRadius: 12, cursor: status === "loading" ? "not-allowed" : "pointer",
+        color: color[status], fontWeight: 700, fontSize: 13,
+        fontFamily: "'Inter','Segoe UI',sans-serif",
+        transition: "all 0.25s ease",
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+      }}
+      onMouseEnter={e => { if (status === "idle") { e.currentTarget.style.borderColor = T.purple; e.currentTarget.style.color = T.purple; e.currentTarget.style.transform = "translateY(-1px)"; }}}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = border[status]; e.currentTarget.style.color = color[status]; e.currentTarget.style.transform = "translateY(0)"; }}
+    >
+      {status === "loading" && <span style={{ width: 13, height: 13, border: `2px solid ${T.purple}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite", display: "inline-block" }} />}
+      {label[status]}
+    </button>
+  );
+}
+// ── Emergency Overlay ─────────────────────────────────────────────────────
+function EmergencyOverlay({ triage, onDismiss }) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setVisible(true), 50); return () => clearTimeout(t); }, []);
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 9999,
+      background: "rgba(0,0,0,0.85)",
+      backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: 20,
+      opacity: visible ? 1 : 0,
+      transition: "opacity 0.3s ease",
+    }}>
+      <div style={{
+        background: "hsl(0,30%,8%)",
+        border: "2px solid hsl(0,90%,55%)",
+        borderRadius: 20,
+        padding: "36px 32px",
+        maxWidth: 480, width: "100%",
+        boxShadow: "0 0 80px hsl(0,90%,55%,0.5), 0 0 160px hsl(0,90%,55%,0.2)",
+        textAlign: "center",
+        animation: "emergencyPulse 1.5s ease-in-out infinite",
+      }}>
+        {/* Flashing icon */}
+        <div style={{ fontSize: 64, marginBottom: 12, animation: "flashIcon 0.8s ease-in-out infinite" }}>🚨</div>
+
+        <div style={{
+          fontSize: 26, fontWeight: 900, color: "hsl(0,90%,62%)",
+          letterSpacing: -0.5, marginBottom: 8,
+          textTransform: "uppercase",
+        }}>EMERGENCY DETECTED</div>
+
+        <div style={{
+          fontSize: 15, color: "hsl(0,60%,80%)",
+          marginBottom: 24, lineHeight: 1.6,
+        }}>
+          Your symptoms suggest a <strong>life-threatening emergency</strong>.<br />
+          Do not wait. Seek immediate medical attention.
+        </div>
+
+        {/* Top diagnosis */}
+        {triage?.top_diagnosis && (
+          <div style={{
+            background: "hsl(0,90%,55%,0.12)",
+            border: "1px solid hsl(0,90%,55%,0.3)",
+            borderRadius: 10, padding: "10px 16px", marginBottom: 24,
+            fontSize: 14, color: "hsl(0,60%,85%)",
+          }}>
+            Possible condition: <strong>{triage.top_diagnosis}</strong>
+          </div>
+        )}
+
+        {/* Call buttons */}
+        <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+          <a href="tel:108" style={{
+            flex: 1, padding: "16px 0",
+            background: "hsl(0,90%,50%)",
+            color: "#fff", fontWeight: 900, fontSize: 20,
+            borderRadius: 14, textDecoration: "none",
+            boxShadow: "0 6px 28px hsl(0,90%,50%,0.6)",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+            transition: "transform 0.15s ease, box-shadow 0.15s ease",
+          }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.04)"; e.currentTarget.style.boxShadow = "0 10px 40px hsl(0,90%,50%,0.8)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 6px 28px hsl(0,90%,50%,0.6)"; }}
+          >
+            📞 Call 108
+          </a>
+          <a href="tel:911" style={{
+            flex: 1, padding: "16px 0",
+            background: "hsl(0,80%,40%)",
+            color: "#fff", fontWeight: 900, fontSize: 20,
+            borderRadius: 14, textDecoration: "none",
+            boxShadow: "0 6px 28px hsl(0,80%,40%,0.5)",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+            transition: "transform 0.15s ease",
+          }}
+            onMouseEnter={e => e.currentTarget.style.transform = "scale(1.04)"}
+            onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+          >
+            📞 Call 911
+          </a>
+        </div>
+
+        {/* Nearest hospital button */}
+        <button
+          onClick={() => { window.open("https://www.google.com/maps/search/hospital+near+me", "_blank"); }}
+          style={{
+            width: "100%", padding: "13px 0",
+            background: "transparent",
+            border: "1.5px solid hsl(0,90%,55%,0.5)",
+            color: "hsl(0,60%,80%)", fontWeight: 700, fontSize: 14,
+            borderRadius: 12, cursor: "pointer", marginBottom: 16,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          }}
+        >
+          🗺️ Find Nearest Hospital
+        </button>
+
+        {/* Dismiss */}
+        <button
+          onClick={onDismiss}
+          style={{
+            background: "transparent", border: "none",
+            color: "hsl(0,20%,50%)", fontSize: 13, cursor: "pointer",
+            textDecoration: "underline",
+          }}
+        >
+          I understand the risk — continue anyway
+        </button>
+      </div>
+    </div>
+  );
+}
 // ── App ────────────────────────────────────────────────────────────────────
 export default function App() {
   const [input, setInput]       = useState("");
@@ -225,7 +413,9 @@ export default function App() {
   const [focused, setFocused]   = useState(false);
   const [listening, setListening]= useState(false);
   const [sessionId]             = useState(() => Math.random().toString(36).slice(2));
+  const [emergency, setEmergency] = useState(null);
   const bottomRef               = useRef(null);
+  const inputRef                = useRef(null);
   const recognitionRef          = useRef(null);
 
   useEffect(() => {
@@ -244,76 +434,118 @@ export default function App() {
       const chatRes = await axios.post(`${API}/chat`, {
         session_id: sessionId, user_input: userText, patient_info: {},
       });
-      const nodes    = chatRes.data.neo4j_nodes || [];
-      const entities = chatRes.data.extracted_entities || [];
-      let triage = null;
-      if (nodes.length > 0) {
-        try {
-          const triageRes = await axios.post(`${API}/graph/query`, { symptoms: nodes });
-          triage = triageRes.data;
-        } catch (_) {}
-      }
-      setMessages(m => [...m, { role: "bot", text: userText, entities, nodes, triage, id: uid() }]);
+      const data     = chatRes.data;
+      const nodes    = data.neo4j_nodes || [];
+      const entities = data.extracted_entities || [];
+      const triage   = data.triage || null;
+      const reply    = data.reply || "";
+
+      setMessages(m => [...m, { role: "bot", text: reply, entities, nodes, triage, id: uid() }]);
+      if (triage?.urgency_level === "CRITICAL") setEmergency(triage);
     } catch {
       setMessages(m => [...m, { role: "bot", text: "Error connecting to backend.", error: true, id: uid() }]);
     } finally {
       setLoading(false);
+      setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [input, loading, sessionId]);
 
-  const toggleListening = () => {
-    if (listening && recognitionRef.current) {
-      // Manually stop listening
-      recognitionRef.current.stop();
+  const toggleListening = useCallback(() => {
+    // Stop if already listening
+    if (listening) {
+      recognitionRef.current?.stop();
+      recognitionRef.current = null;
       setListening(false);
       return;
     }
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("Oops! Your browser doesn't support voice dictation. Please use Chrome or Edge.");
+      setMessages(m => [...m, {
+        role: "bot",
+        text: "Voice input is not supported in this browser. Please use Chrome or Edge.",
+        error: true, id: uid()
+      }]);
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognitionRef.current = recognition;
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    // Abort any existing instance before creating new one
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch (_) {}
+      recognitionRef.current = null;
+    }
 
-    recognition.onstart = () => setListening(true);
-    
+    const recognition = new SpeechRecognition();
+    recognition.continuous      = false;  // single utterance — more reliable
+    recognition.interimResults  = true;
+    recognition.lang            = "en-US";
+    recognition.maxAlternatives = 1;
+    recognitionRef.current = recognition;
+
+    let finalTranscript = "";
+
+    recognition.onstart = () => {
+      finalTranscript = "";
+      setListening(true);
+    };
+
     recognition.onresult = (event) => {
-      let fullTranscript = "";
-      for (let i = 0; i < event.results.length; ++i) {
-        fullTranscript += event.results[i][0].transcript;
+      let interim = "";
+      finalTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const t = event.results[i][0].transcript;
+        if (event.results[i].isFinal) finalTranscript += t;
+        else interim += t;
       }
-      // Update the input field in real-time
-      setInput(fullTranscript);
+      // Show interim in real-time, commit final
+      setInput(finalTranscript || interim);
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+      recognitionRef.current = null;
+      // Refocus input after voice ends
+      setTimeout(() => inputRef.current?.focus(), 100);
     };
 
     recognition.onerror = (event) => {
-      console.error("Speech Recognition Error:", event.error);
-      if (event.error === 'not-allowed') {
-        alert("Microphone access was denied. Please check your browser settings.");
-      } else if (event.error !== 'no-speech') {
-        alert("Microphone turned off due to error: " + event.error);
-      }
       setListening(false);
+      recognitionRef.current = null;
+      if (event.error === "not-allowed" || event.error === "permission-denied") {
+        setMessages(m => [...m, {
+          role: "bot",
+          text: "Microphone access denied. Please allow microphone permission in your browser settings and try again.",
+          error: true, id: uid()
+        }]);
+      } else if (event.error === "no-speech") {
+        // Silent — no speech detected, just stop quietly
+      } else if (event.error === "network") {
+        // Transient Chrome network error — stop silently, user can retry
+        setListening(false);
+        recognitionRef.current = null;
+        setTimeout(() => inputRef.current?.focus(), 100);
+      } else if (event.error !== "aborted") {
+        setMessages(m => [...m, {
+          role: "bot",
+          text: `Voice input error: ${event.error}. Please try again.`,
+          error: true, id: uid()
+        }]);
+      }
     };
 
-    recognition.onend = () => setListening(false);
-    
     try {
       recognition.start();
     } catch (err) {
-      console.error(err);
+      setListening(false);
+      recognitionRef.current = null;
+      console.error("Recognition start failed:", err);
     }
-  };
+  }, [listening, inputRef]);
 
   return (
     <div style={S.page}>
       <ParticleCanvas />
+      {emergency && <EmergencyOverlay triage={emergency} onDismiss={() => setEmergency(null)} />}
 
       {/* Background orbs */}
       <div style={S.orb1} /><div style={S.orb2} /><div style={S.orb3} />
@@ -334,6 +566,24 @@ export default function App() {
               <span style={S.liveDot} />
               LIVE
             </div>
+            {messages.length > 0 && (
+              <button
+                onClick={() => { setMessages([]); setEmergency(null); setTimeout(() => inputRef.current?.focus(), 50); }}
+                title="Clear chat"
+                style={{
+                  background: "hsl(0,80%,55%,0.12)",
+                  border: "1px solid hsl(0,80%,55%,0.28)",
+                  borderRadius: 99, padding: "5px 13px",
+                  fontSize: 11, fontWeight: 700, color: "hsl(0,80%,70%)",
+                  cursor: "pointer", letterSpacing: 0.5,
+                  transition: "background 0.2s ease, transform 0.15s ease",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "hsl(0,80%,55%,0.22)"; e.currentTarget.style.transform = "scale(1.05)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "hsl(0,80%,55%,0.12)"; e.currentTarget.style.transform = "scale(1)"; }}
+              >
+                🗑 Clear Chat
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -371,7 +621,7 @@ export default function App() {
                 <div style={S.userBubble}>{msg.text}</div>
               </div>
             )}
-            {msg.role === "bot" && !msg.error && <BotResponse msg={msg} />}
+            {msg.role === "bot" && !msg.error && <BotResponse msg={msg} sessionId={sessionId} />}
             {msg.role === "bot" && msg.error && (
               <div style={S.errorBubble}>{msg.text}</div>
             )}
@@ -396,6 +646,7 @@ export default function App() {
         <div style={{ ...S.inputWrap, ...(focused ? S.inputWrapFocused : {}) }}>
           <span style={{ fontSize: 17, marginRight: 8, opacity: 0.45 }}>💬</span>
           <input
+            ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === "Enter" && send()}
@@ -433,6 +684,14 @@ export default function App() {
         input::placeholder { color: hsl(220,10%,40%); }
 
         /* ─ Keyframes ─ */
+        @keyframes emergencyPulse {
+          0%,100% { box-shadow: 0 0 80px hsl(0,90%,55%,0.5), 0 0 160px hsl(0,90%,55%,0.2); }
+          50%      { box-shadow: 0 0 120px hsl(0,90%,55%,0.8), 0 0 200px hsl(0,90%,55%,0.4); }
+        }
+        @keyframes flashIcon {
+          0%,100% { transform: scale(1);    filter: drop-shadow(0 0 12px hsl(0,90%,55%,0.8)); }
+          50%      { transform: scale(1.15); filter: drop-shadow(0 0 28px hsl(0,90%,55%,1)); }
+        }
         @keyframes orbFloat {
           0%,100% { transform: translate(0,0) scale(1); }
           33%      { transform: translate(40px,-30px) scale(1.06); }
@@ -652,6 +911,17 @@ const S = {
     borderRadius: "20px 20px 5px 20px",
     maxWidth: "70%", fontSize: 15, lineHeight: 1.55, fontWeight: 500,
     boxShadow: `0 4px 24px ${T.purpleGlow}`,
+  },
+
+  // Bot bubble
+  botBubbleWrap: { display: "flex", justifyContent: "flex-start", marginBottom: 14 },
+  botBubble: {
+    background: "rgba(255,255,255,0.06)",
+    backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+    border: `1px solid ${T.border}`,
+    color: T.textPrimary, padding: "13px 20px",
+    borderRadius: "20px 20px 20px 5px",
+    maxWidth: "85%", fontSize: 15, lineHeight: 1.55, fontWeight: 400,
   },
 
   // Cards

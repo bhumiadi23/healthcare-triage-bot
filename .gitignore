@@ -1,8 +1,25 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+
+# Logs
 *.log
+
+# Environment files — NEVER commit credentials
+.env
 backend/.env
 knowledge-graph/.env
+
+# Generated files
+*.pdf
+backend/sample_report.pdf
+
+# Node
 node_modules/
-.env
+frontend/node_modules/
+
+# Build
+build/
+dist/

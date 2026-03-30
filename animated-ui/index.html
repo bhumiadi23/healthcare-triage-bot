@@ -3,87 +3,120 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nexus · Dashboard</title>
-  <meta name="description" content="A stunning animated dashboard UI with glassmorphism, smooth transitions, and micro-animations." />
+  <title>MedTriage AI — Intelligent Symptom Checker</title>
+  <meta name="description" content="AI-powered medical triage assistant. Describe your symptoms and get instant care routing powered by BioBERT + Knowledge Graph." />
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+
+  <!-- jsPDF for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- Google Maps will be loaded dynamically in app.js -->
+
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body class="dark" data-triage="none">
+
   <!-- Animated Background -->
-  <div class="bg-orbs">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-    <div class="orb orb-4"></div>
+  <div class="bg-mesh">
+    <div class="mesh-orb mesh-1"></div>
+    <div class="mesh-orb mesh-2"></div>
+    <div class="mesh-orb mesh-3"></div>
   </div>
   <canvas id="particle-canvas"></canvas>
 
-  <!-- Sidebar -->
+  <!-- ══════════════════════════════════════
+       EMERGENCY OVERLAY (shown when CRITICAL)
+       ══════════════════════════════════════ -->
+  <div id="emergency-overlay" class="emergency-overlay hidden">
+    <div class="emergency-banner">
+      <div class="emergency-icon">🚨</div>
+      <div class="emergency-content">
+        <h2 id="emergency-title">MEDICAL EMERGENCY DETECTED</h2>
+        <p id="emergency-msg">Your symptoms indicate a life-threatening emergency. Do not wait — call emergency services immediately.</p>
+      </div>
+      <div class="emergency-actions">
+        <a href="tel:911" class="btn-emergency" id="btn-911">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5 19.79 19.79 0 0 1 1.61 5a2 2 0 0 1 1.99-2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 10a16 16 0 0 0 6.06 6.06l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Call 911
+        </a>
+        <a href="tel:108" class="btn-emergency btn-108" id="btn-108">📞 Call 108 (India)</a>
+        <button class="btn-dismiss-emergency" id="dismiss-emergency">✕ Continue with AI</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SIDEBAR
+       ══════════════════════════════════════ -->
   <aside class="sidebar" id="sidebar">
+    <!-- Logo -->
     <div class="sidebar-logo">
       <div class="logo-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
         </svg>
       </div>
-      <span class="logo-text">Nexus</span>
+      <span class="logo-text">MedTriage<span class="logo-ai">AI</span></span>
     </div>
+
+    <!-- Navigation -->
     <nav class="sidebar-nav">
-      <a href="#" class="nav-item active" data-label="Dashboard" id="nav-dashboard">
-        <span class="nav-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        </span>
-        <span class="nav-label">Dashboard</span>
-        <span class="nav-dot"></span>
-      </a>
-      <a href="#" class="nav-item" data-label="Analytics" id="nav-analytics">
-        <span class="nav-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        </span>
-        <span class="nav-label">Analytics</span>
-      </a>
-      <a href="#" class="nav-item" data-label="Projects" id="nav-projects">
-        <span class="nav-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        </span>
-        <span class="nav-label">Projects</span>
-      </a>
-      <a href="#" class="nav-item" data-label="Explore" id="nav-explore">
-        <span class="nav-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </span>
-        <span class="nav-label">Explore</span>
-      </a>
-      <a href="#" class="nav-item" data-label="Messages" id="nav-messages">
+      <a href="#" class="nav-item active" data-tab="chat" id="nav-chat">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         </span>
-        <span class="nav-label">Messages</span>
-        <span class="nav-badge">3</span>
+        <span class="nav-label">Triage Chat</span>
       </a>
-      <a href="#" class="nav-item" data-label="Settings" id="nav-settings">
+      <a href="#" class="nav-item" data-tab="history" id="nav-history">
         <span class="nav-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </span>
-        <span class="nav-label">Settings</span>
+        <span class="nav-label">Visit History</span>
+      </a>
+      <a href="#" class="nav-item" data-tab="map" id="nav-map">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </span>
+        <span class="nav-label">Nearby Care</span>
+        <span class="nav-badge urgent-badge hidden" id="map-badge">!</span>
+      </a>
+      <a href="#" class="nav-item" data-tab="report" id="nav-report">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </span>
+        <span class="nav-label">Handoff Report</span>
       </a>
     </nav>
+
+    <!-- Medical Disclaimer (omnipresent) -->
+    <div class="sidebar-disclaimer">
+      <div class="disclaimer-icon">⚕️</div>
+      <p>This AI is <strong>NOT</strong> a substitute for professional medical advice. Always consult a licensed physician.</p>
+      <p class="disclaimer-small">In emergencies, call <strong>911</strong> or <strong>108</strong> immediately.</p>
+    </div>
+
+    <!-- User -->
     <div class="sidebar-user">
       <div class="user-avatar">
-        <span>AK</span>
+        <span>SJ</span>
         <span class="avatar-status"></span>
       </div>
       <div class="user-info">
-        <span class="user-name">Aditya K.</span>
-        <span class="user-role">Pro Member</span>
+        <span class="user-name">Sarah Johnson</span>
+        <span class="user-role">Patient · Returning User</span>
       </div>
     </div>
   </aside>
 
-  <!-- Main Content -->
+  <!-- ══════════════════════════════════════
+       MAIN CONTENT
+       ══════════════════════════════════════ -->
   <main class="main-content">
+
     <!-- Top Bar -->
     <header class="topbar">
       <div class="topbar-left">
@@ -91,282 +124,508 @@
           <span></span><span></span><span></span>
         </button>
         <div class="breadcrumb">
-          <span class="breadcrumb-root">Nexus</span>
+          <span class="breadcrumb-root">MedTriage AI</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="breadcrumb-sep"><polyline points="9 18 15 12 9 6"/></svg>
-          <span class="breadcrumb-current" id="breadcrumb-page">Dashboard</span>
+          <span class="breadcrumb-current" id="breadcrumb-page">Triage Chat</span>
         </div>
       </div>
       <div class="topbar-right">
-        <div class="search-wrap">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" class="search-input" id="search-input" placeholder="Search anything…" />
-          <kbd class="search-kbd">⌘K</kbd>
+        <!-- Triage Status Pill -->
+        <div class="triage-pill" id="triage-pill">
+          <span class="triage-dot"></span>
+          <span id="triage-pill-text">Awaiting symptoms</span>
         </div>
-        <button class="icon-btn" id="notif-btn" aria-label="Notifications">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          <span class="btn-badge">2</span>
-        </button>
         <button class="icon-btn" id="theme-btn" aria-label="Toggle theme">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="theme-icon"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="theme-icon">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
         </button>
       </div>
     </header>
 
-    <!-- Dashboard Content -->
-    <div class="content-area">
-      <!-- Welcome Banner -->
-      <section class="welcome-banner reveal">
-        <div class="welcome-text">
-          <p class="welcome-greeting">Good morning ☀️</p>
-          <h1 class="welcome-title">Welcome back, <span class="gradient-text">Aditya</span></h1>
-          <p class="welcome-sub">Here's what's happening with your projects today.</p>
-        </div>
-        <div class="welcome-cta">
-          <button class="btn-primary" id="new-project-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            New Project
-          </button>
-          <button class="btn-ghost" id="view-report-btn">View Report →</button>
-        </div>
-      </section>
+    <!-- ──────────────────────────────────
+         TAB: TRIAGE CHAT
+         ────────────────────────────────── -->
+    <div class="tab-content active" id="tab-chat">
 
-      <!-- Stat Cards -->
-      <section class="stats-grid">
-        <div class="stat-card reveal" style="--delay: 0.05s">
-          <div class="stat-icon stat-icon-purple">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          </div>
-          <div class="stat-body">
-            <span class="stat-label">Total Users</span>
-            <span class="stat-value" data-target="24891">0</span>
-            <span class="stat-change positive">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
-              +12.5% this month
-            </span>
-          </div>
-          <div class="stat-sparkline" id="spark-1"></div>
-        </div>
-        <div class="stat-card reveal" style="--delay: 0.1s">
-          <div class="stat-icon stat-icon-cyan">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          </div>
-          <div class="stat-body">
-            <span class="stat-label">Revenue</span>
-            <span class="stat-value" data-target="148200" data-prefix="$">$0</span>
-            <span class="stat-change positive">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
-              +8.2% this month
-            </span>
-          </div>
-          <div class="stat-sparkline" id="spark-2"></div>
-        </div>
-        <div class="stat-card reveal" style="--delay: 0.15s">
-          <div class="stat-icon stat-icon-orange">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          </div>
-          <div class="stat-body">
-            <span class="stat-label">Active Sessions</span>
-            <span class="stat-value" data-target="1432">0</span>
-            <span class="stat-change negative">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 9 12 15 6 9"/></svg>
-              -3.1% this week
-            </span>
-          </div>
-          <div class="stat-sparkline" id="spark-3"></div>
-        </div>
-        <div class="stat-card reveal" style="--delay: 0.2s">
-          <div class="stat-icon stat-icon-green">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          </div>
-          <div class="stat-body">
-            <span class="stat-label">Conversion Rate</span>
-            <span class="stat-value" data-target="68" data-suffix="%">0%</span>
-            <span class="stat-change positive">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
-              +5.4% this month
-            </span>
-          </div>
-          <div class="stat-sparkline" id="spark-4"></div>
-        </div>
-      </section>
+      <!-- Omnipresent Disclaimer Banner -->
+      <div class="disclaimer-banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="disclaimer-banner-icon"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span><strong>Medical Disclaimer:</strong> This AI provides decision support only and does NOT constitute a medical diagnosis. Always seek advice from a qualified healthcare professional. Life-threatening emergencies: <strong>call 911 / 108 immediately</strong>.</span>
+      </div>
 
-      <!-- Main Panels Row -->
-      <section class="panels-row">
-        <!-- Chart Panel -->
-        <div class="panel panel-chart reveal" style="--delay: 0.25s">
-          <div class="panel-header">
-            <div>
-              <h2 class="panel-title">Revenue Overview</h2>
-              <p class="panel-sub">Last 7 months performance</p>
-            </div>
-            <div class="chart-tabs">
-              <button class="chart-tab active" data-period="monthly" id="tab-monthly">Monthly</button>
-              <button class="chart-tab" data-period="weekly" id="tab-weekly">Weekly</button>
+      <!-- Chat Area -->
+      <div class="chat-layout">
+        <div class="chat-panel">
+
+          <!-- Chat Messages -->
+          <div class="chat-messages" id="chat-messages">
+            <!-- Messages injected by JS -->
+          </div>
+
+          <!-- Typing Indicator -->
+          <div class="typing-indicator hidden" id="typing-indicator">
+            <div class="chat-bubble bot-bubble typing">
+              <div class="bot-avatar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+              <div class="bubble-content">
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+              </div>
             </div>
           </div>
-          <div class="chart-area">
-            <canvas id="revenue-chart"></canvas>
+
+          <!-- Input Area -->
+          <div class="chat-input-area">
+            <div class="input-wrap">
+              <textarea
+                id="chat-input"
+                placeholder="Describe your symptoms… e.g., 'I have chest pain and shortness of breath'"
+                rows="1"
+                autocomplete="off"
+              ></textarea>
+              <button class="send-btn" id="send-btn" aria-label="Send message">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+            <div class="input-footer">
+              <span class="input-hint">Press <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line</span>
+              <button class="btn-new-session" id="new-session-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+                New Session
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Activity Panel -->
-        <div class="panel panel-activity reveal" style="--delay: 0.3s">
-          <div class="panel-header">
-            <h2 class="panel-title">Live Activity</h2>
-            <span class="live-badge">
-              <span class="live-dot"></span> Live
-            </span>
+        <!-- Sidebar Info Panel -->
+        <div class="info-panel">
+          <!-- Triage Status Card -->
+          <div class="info-card" id="triage-status-card">
+            <h3 class="info-card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              Triage Status
+            </h3>
+            <div class="triage-level-display" id="triage-level-display">
+              <div class="triage-ring" id="triage-ring">
+                <span id="triage-ring-text">?</span>
+              </div>
+              <div class="triage-info">
+                <span class="triage-label" id="triage-label">Pending Assessment</span>
+                <span class="triage-action" id="triage-action">Share your symptoms to begin</span>
+              </div>
+            </div>
           </div>
-          <ul class="activity-list" id="activity-list">
-            <li class="activity-item">
-              <div class="activity-avatar av-purple">JM</div>
-              <div class="activity-info">
-                <span class="activity-name">James M.</span>
-                <span class="activity-action">completed a milestone</span>
+
+          <!-- Extracted Symptoms -->
+          <div class="info-card" id="symptoms-card">
+            <h3 class="info-card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              Detected Symptoms
+            </h3>
+            <div class="symptoms-tags" id="symptoms-tags">
+              <span class="symptom-placeholder">No symptoms detected yet</span>
+            </div>
+          </div>
+
+          <!-- Possible Conditions -->
+          <div class="info-card" id="conditions-card">
+            <h3 class="info-card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Differential Diagnosis
+            </h3>
+            <ul class="conditions-list" id="conditions-list">
+              <li class="condition-placeholder">Complete assessment for results</li>
+            </ul>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="info-card quick-actions-card">
+            <h3 class="info-card-title">Quick Actions</h3>
+            <button class="qa-btn" id="qa-export-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Doctor Report (PDF)
+            </button>
+            <button class="qa-btn qa-btn-map" id="qa-map-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Find Nearby Clinics
+            </button>
+            <button class="qa-btn qa-btn-emergency" id="qa-emergency-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5 19.79 19.79 0 0 1 1.61 5a2 2 0 0 1 1.99-2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 10a16 16 0 0 0 6.06 6.06l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              Emergency: Call 911 / 108
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──────────────────────────────────
+         TAB: VISIT HISTORY
+         ────────────────────────────────── -->
+    <div class="tab-content hidden" id="tab-history">
+      <div class="tab-header">
+        <h1 class="tab-title">Visit History</h1>
+        <p class="tab-sub">Returning patient: <strong>Sarah Johnson</strong> · DOB: 15 Mar 1980 · MRN: TRI-2024-0042</p>
+      </div>
+      <div class="history-list" id="history-list">
+        <!-- Pre-loaded dummy history -->
+        <div class="history-card">
+          <div class="history-card-header">
+            <div class="history-meta">
+              <span class="history-date">29 Mar 2026 · 8:12 AM</span>
+              <span class="urgency-badge level-high">HIGH</span>
+            </div>
+            <button class="history-expand-btn">▾</button>
+          </div>
+          <div class="history-chief">Chief Complaint: <strong>"Chest tightness and shortness of breath after climbing stairs"</strong></div>
+          <div class="history-symptoms">Symptoms: chest pain, shortness of breath, sweating, fatigue</div>
+          <div class="history-action">Action: Go to ER now — Cardiac evaluation required</div>
+          <div class="history-footer">
+            <span class="history-source">Source: BioBERT NER + Rule Engine</span>
+            <button class="btn-sm-ghost" onclick="loadDemoReport()">View Report →</button>
+          </div>
+        </div>
+
+        <div class="history-card">
+          <div class="history-card-header">
+            <div class="history-meta">
+              <span class="history-date">15 Jan 2026 · 3:45 PM</span>
+              <span class="urgency-badge level-medium">MEDIUM</span>
+            </div>
+          </div>
+          <div class="history-chief">Chief Complaint: <strong>"Persistent cough and mild fever for 3 days"</strong></div>
+          <div class="history-symptoms">Symptoms: cough, fever, body aches, fatigue</div>
+          <div class="history-action">Action: Urgent care within 4 hours</div>
+          <div class="history-footer">
+            <span class="history-source">Source: Neo4j KG + LLM</span>
+          </div>
+        </div>
+
+        <div class="history-card">
+          <div class="history-card-header">
+            <div class="history-meta">
+              <span class="history-date">02 Oct 2025 · 10:30 AM</span>
+              <span class="urgency-badge level-low">LOW</span>
+            </div>
+          </div>
+          <div class="history-chief">Chief Complaint: <strong>"Runny nose and mild headache"</strong></div>
+          <div class="history-symptoms">Symptoms: runny nose, headache, sore throat</div>
+          <div class="history-action">Action: Schedule GP appointment</div>
+          <div class="history-footer">
+            <span class="history-source">Source: Rule Fallback</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──────────────────────────────────
+         TAB: NEARBY CARE MAP
+         ────────────────────────────────── -->
+    <div class="tab-content hidden" id="tab-map">
+      <div class="tab-header">
+        <h1 class="tab-title">Nearby Medical Facilities</h1>
+        <p class="tab-sub" id="map-sub-text">Showing hospitals &amp; clinics near your location</p>
+      </div>
+
+      <div class="map-layout">
+        <div class="map-container">
+          <div id="google-map" class="google-map-embed">
+            <!-- Google Map renders here -->
+            <div class="map-placeholder" id="map-placeholder">
+              <div class="map-placeholder-icon">🗺️</div>
+              <p>Loading map…</p>
+              <p class="map-placeholder-sub">Allow location access to find nearby care</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="facilities-panel">
+          <div class="facilities-header">
+            <h3>Nearby Facilities</h3>
+            <span class="facilities-count" id="facilities-count">—</span>
+          </div>
+          <ul class="facilities-list" id="facilities-list">
+            <!-- Demo facilities (hardcoded fallback) -->
+            <li class="facility-item">
+              <div class="facility-icon facility-emergency">🏥</div>
+              <div class="facility-info">
+                <strong>City General Hospital</strong>
+                <span>Emergency Department · 0.8 km</span>
+                <span class="facility-hours">Open 24/7</span>
               </div>
-              <span class="activity-time">2m ago</span>
+              <a href="https://maps.google.com/?q=hospital+near+me" target="_blank" class="facility-dir-btn">Directions</a>
             </li>
-            <li class="activity-item">
-              <div class="activity-avatar av-cyan">SL</div>
-              <div class="activity-info">
-                <span class="activity-name">Sara L.</span>
-                <span class="activity-action">pushed new code</span>
+            <li class="facility-item">
+              <div class="facility-icon facility-clinic">🩺</div>
+              <div class="facility-info">
+                <strong>MedPlus Urgent Care</strong>
+                <span>Urgent Care Clinic · 1.2 km</span>
+                <span class="facility-hours">Open until 10 PM</span>
               </div>
-              <span class="activity-time">5m ago</span>
+              <a href="https://maps.google.com/?q=urgent+care+near+me" target="_blank" class="facility-dir-btn">Directions</a>
             </li>
-            <li class="activity-item">
-              <div class="activity-avatar av-orange">RK</div>
-              <div class="activity-info">
-                <span class="activity-name">Raj K.</span>
-                <span class="activity-action">opened a pull request</span>
+            <li class="facility-item">
+              <div class="facility-icon facility-clinic">💊</div>
+              <div class="facility-info">
+                <strong>Apollo Clinic</strong>
+                <span>Multi-specialty Clinic · 1.8 km</span>
+                <span class="facility-hours">Open until 9 PM</span>
               </div>
-              <span class="activity-time">11m ago</span>
+              <a href="https://maps.google.com/?q=apollo+clinic+near+me" target="_blank" class="facility-dir-btn">Directions</a>
             </li>
-            <li class="activity-item">
-              <div class="activity-avatar av-green">YP</div>
-              <div class="activity-info">
-                <span class="activity-name">Yuki P.</span>
-                <span class="activity-action">joined the team</span>
+            <li class="facility-item">
+              <div class="facility-icon facility-emergency">🚑</div>
+              <div class="facility-info">
+                <strong>St. Mary's Medical Center</strong>
+                <span>Trauma Center · 2.3 km</span>
+                <span class="facility-hours">Open 24/7</span>
               </div>
-              <span class="activity-time">22m ago</span>
-            </li>
-            <li class="activity-item">
-              <div class="activity-avatar av-pink">NF</div>
-              <div class="activity-info">
-                <span class="activity-name">Nina F.</span>
-                <span class="activity-action">created a new branch</span>
-              </div>
-              <span class="activity-time">37m ago</span>
+              <a href="https://maps.google.com/?q=st+marys+medical+center+near+me" target="_blank" class="facility-dir-btn">Directions</a>
             </li>
           </ul>
-        </div>
-      </section>
 
-      <!-- Bottom Row -->
-      <section class="bottom-row">
-        <!-- Projects Table -->
-        <div class="panel panel-projects reveal" style="--delay: 0.35s">
-          <div class="panel-header">
-            <h2 class="panel-title">Active Projects</h2>
-            <button class="btn-sm-ghost" id="see-all-btn">See all →</button>
-          </div>
-          <div class="project-list">
-            <div class="project-item">
-              <div class="project-dot" style="background: var(--purple)"></div>
-              <div class="project-info">
-                <span class="project-name">Nexus Dashboard</span>
-                <span class="project-team">4 members</span>
-              </div>
-              <div class="project-progress-wrap">
-                <div class="project-progress-bar">
-                  <div class="project-progress-fill" style="--pct: 82%; background: var(--purple)"></div>
-                </div>
-                <span class="project-pct">82%</span>
-              </div>
-              <span class="project-status status-active">Active</span>
-            </div>
-            <div class="project-item">
-              <div class="project-dot" style="background: var(--cyan)"></div>
-              <div class="project-info">
-                <span class="project-name">AI Pipeline</span>
-                <span class="project-team">7 members</span>
-              </div>
-              <div class="project-progress-wrap">
-                <div class="project-progress-bar">
-                  <div class="project-progress-fill" style="--pct: 55%; background: var(--cyan)"></div>
-                </div>
-                <span class="project-pct">55%</span>
-              </div>
-              <span class="project-status status-review">Review</span>
-            </div>
-            <div class="project-item">
-              <div class="project-dot" style="background: var(--orange)"></div>
-              <div class="project-info">
-                <span class="project-name">Mobile Revamp</span>
-                <span class="project-team">3 members</span>
-              </div>
-              <div class="project-progress-wrap">
-                <div class="project-progress-bar">
-                  <div class="project-progress-fill" style="--pct: 30%; background: var(--orange)"></div>
-                </div>
-                <span class="project-pct">30%</span>
-              </div>
-              <span class="project-status status-pending">Pending</span>
-            </div>
-            <div class="project-item">
-              <div class="project-dot" style="background: var(--green)"></div>
-              <div class="project-info">
-                <span class="project-name">Data Warehouse</span>
-                <span class="project-team">5 members</span>
-              </div>
-              <div class="project-progress-wrap">
-                <div class="project-progress-bar">
-                  <div class="project-progress-fill" style="--pct: 95%; background: var(--green)"></div>
-                </div>
-                <span class="project-pct">95%</span>
-              </div>
-              <span class="project-status status-active">Active</span>
-            </div>
+          <div class="facilities-disclaimer">
+            <p>⚠️ <strong>Emergency?</strong> Don't wait for directions.</p>
+            <a href="tel:911" class="btn-emergency-sm">📞 Call 911 Now</a>
+            <a href="tel:108" class="btn-emergency-sm btn-108-sm">📞 Call 108 (India)</a>
           </div>
         </div>
-
-        <!-- Donut + Skills -->
-        <div class="panel panel-skills reveal" style="--delay: 0.4s">
-          <div class="panel-header">
-            <h2 class="panel-title">Team Performance</h2>
-          </div>
-          <div class="donut-wrap">
-            <canvas id="donut-chart" width="160" height="160"></canvas>
-            <div class="donut-center">
-              <span class="donut-value">92</span>
-              <span class="donut-label">Score</span>
-            </div>
-          </div>
-          <div class="skills-list">
-            <div class="skill-item">
-              <span class="skill-name">Design</span>
-              <div class="skill-bar"><div class="skill-fill" style="--pct: 88%; background: var(--purple)"></div></div>
-              <span class="skill-pct">88%</span>
-            </div>
-            <div class="skill-item">
-              <span class="skill-name">Engineering</span>
-              <div class="skill-bar"><div class="skill-fill" style="--pct: 94%; background: var(--cyan)"></div></div>
-              <span class="skill-pct">94%</span>
-            </div>
-            <div class="skill-item">
-              <span class="skill-name">Marketing</span>
-              <div class="skill-bar"><div class="skill-fill" style="--pct: 72%; background: var(--orange)"></div></div>
-              <span class="skill-pct">72%</span>
-            </div>
-          </div>
-        </div>
-      </section>
+      </div>
     </div>
-  </main>
+
+    <!-- ──────────────────────────────────
+         TAB: DOCTOR HANDOFF REPORT
+         ────────────────────────────────── -->
+    <div class="tab-content hidden" id="tab-report">
+      <div class="tab-header">
+        <h1 class="tab-title">Doctor Handoff Report</h1>
+        <p class="tab-sub">AI-generated summary for clinical handoff — review and verify before use</p>
+      </div>
+
+      <div class="report-actions-bar">
+        <button class="btn-primary" id="export-pdf-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export as PDF
+        </button>
+        <button class="btn-ghost" id="reload-report-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+          Reload from Session
+        </button>
+        <div class="report-disclaimer-pill">
+          ⚕️ NOT a clinical diagnosis — AI-generated triage support only
+        </div>
+      </div>
+
+      <!-- Report Document -->
+      <div class="report-document" id="report-document">
+
+        <!-- Header -->
+        <div class="report-header-doc">
+          <div class="report-logo-doc">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            <span>MedTriage AI</span>
+          </div>
+          <div class="report-meta-doc">
+            <span id="report-id-display">Report #: TRI-2026-0042</span>
+            <span id="report-date-display">Generated: 29 Mar 2026, 08:12 AM</span>
+            <span class="report-confidential">⚠ CONFIDENTIAL — PHYSICIAN USE ONLY</span>
+          </div>
+        </div>
+
+        <div class="report-divider"></div>
+
+        <!-- Patient Info -->
+        <div class="report-section">
+          <h2 class="report-section-title">Patient Information</h2>
+          <div class="report-grid-2">
+            <div class="report-field">
+              <label>Full Name</label>
+              <span id="rpt-name">Sarah Johnson</span>
+            </div>
+            <div class="report-field">
+              <label>Date of Birth</label>
+              <span id="rpt-dob">15 March 1980 (Age 46)</span>
+            </div>
+            <div class="report-field">
+              <label>MRN</label>
+              <span id="rpt-mrn">TRI-2024-0042</span>
+            </div>
+            <div class="report-field">
+              <label>Session ID</label>
+              <span id="rpt-session">—</span>
+            </div>
+            <div class="report-field">
+              <label>Known Conditions</label>
+              <span id="rpt-known">Hypertension, Type 2 Diabetes (diagnosed 2019)</span>
+            </div>
+            <div class="report-field">
+              <label>Current Medications</label>
+              <span id="rpt-meds">Lisinopril 10mg, Metformin 500mg, Aspirin 81mg</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chief Complaint -->
+        <div class="report-section">
+          <h2 class="report-section-title">Chief Complaint</h2>
+          <div class="report-complaint-box" id="rpt-complaint">
+            "Chest tightness and shortness of breath, worsening over the past 2 hours. Also experiencing sweating and fatigue."
+          </div>
+          <div class="report-field-inline">
+            <label>Symptom Onset:</label>
+            <span id="rpt-onset">Acute, ~2 hours prior to assessment</span>
+          </div>
+          <div class="report-field-inline">
+            <label>Duration:</label>
+            <span id="rpt-duration">Continuous, not resolved</span>
+          </div>
+        </div>
+
+        <!-- Extracted Symptoms -->
+        <div class="report-section">
+          <h2 class="report-section-title">Extracted Symptoms (BioBERT NER)</h2>
+          <div class="report-symptoms-grid" id="rpt-symptoms-grid">
+            <div class="rpt-symptom-tag critical-symptom">chest pain</div>
+            <div class="rpt-symptom-tag critical-symptom">shortness of breath</div>
+            <div class="rpt-symptom-tag high-symptom">sweating</div>
+            <div class="rpt-symptom-tag high-symptom">fatigue</div>
+          </div>
+          <p class="report-source-note">Source: BioBERT medical NER model · Confidence: 0.92</p>
+        </div>
+
+        <!-- Triage Decision -->
+        <div class="report-section">
+          <h2 class="report-section-title">Triage Decision</h2>
+          <div class="triage-decision-box" id="rpt-triage-box" data-level="HIGH">
+            <div class="triage-decision-level">
+              <span class="triage-decision-badge" id="rpt-urgency-badge">HIGH</span>
+              <span class="triage-decision-label" id="rpt-urgency-label">Go to Emergency Room Now</span>
+            </div>
+            <div class="triage-decision-action" id="rpt-action">
+              Cardiac evaluation required. Patient should proceed to an Emergency Department immediately. Do not drive — arrange transport or call emergency services.
+            </div>
+            <div class="triage-decision-score">
+              Urgency Score: <strong id="rpt-score">80/100</strong> · Confidence: <strong id="rpt-confidence">0.88</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Differential Diagnosis -->
+        <div class="report-section">
+          <h2 class="report-section-title">Differential Diagnosis (Knowledge Graph + Rule Engine)</h2>
+          <table class="report-table" id="rpt-diff-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Condition</th>
+                <th>Probability</th>
+                <th>ICD-10</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody id="rpt-diff-tbody">
+              <tr>
+                <td>1</td>
+                <td>Myocardial Infarction (STEMI/NSTEMI)</td>
+                <td><span class="prob-bar-wrap"><span class="prob-bar" style="--pct:88%"></span> 88%</span></td>
+                <td>I21.9</td>
+                <td>Rule Engine</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>Pulmonary Embolism</td>
+                <td><span class="prob-bar-wrap"><span class="prob-bar" style="--pct:72%"></span> 72%</span></td>
+                <td>I26.9</td>
+                <td>Neo4j KG</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td>Unstable Angina</td>
+                <td><span class="prob-bar-wrap"><span class="prob-bar" style="--pct:65%"></span> 65%</span></td>
+                <td>I20.0</td>
+                <td>Neo4j KG</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td>Aortic Dissection</td>
+                <td><span class="prob-bar-wrap"><span class="prob-bar" style="--pct:40%"></span> 40%</span></td>
+                <td>I71.0</td>
+                <td>Rule Engine</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="report-source-note">⚠️ Probabilistic estimates — NOT confirmatory diagnoses. Clinical judgment and investigations required.</p>
+        </div>
+
+        <!-- Conversation Timeline -->
+        <div class="report-section">
+          <h2 class="report-section-title">Symptom Timeline (AI Conversation Log)</h2>
+          <div class="report-timeline" id="rpt-timeline">
+            <div class="timeline-item">
+              <div class="timeline-time">08:10 AM</div>
+              <div class="timeline-content">
+                <strong>Patient:</strong> "I've been having chest tightness for the past 2 hours, it's getting worse."
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">08:10 AM</div>
+              <div class="timeline-content">
+                <strong>AI (BioBERT):</strong> Extracted: [chest pain, shortness of breath] · Follow-up: "Does the pain radiate to your left arm or jaw?"
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">08:11 AM</div>
+              <div class="timeline-content">
+                <strong>Patient:</strong> "Yes, there's some pain in my left shoulder. I'm also sweating a lot."
+              </div>
+            </div>
+            <div class="timeline-item timeline-item-critical">
+              <div class="timeline-time">08:11 AM</div>
+              <div class="timeline-content">
+                <strong>Rule Engine:</strong> 🚨 RED FLAG TRIGGERED — chest pain + sweating → ACS protocol → HIGH urgency
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">08:12 AM</div>
+              <div class="timeline-content">
+                <strong>AI Final:</strong> Triage complete. Recommended: Go to ER now. Report generated.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vital Flags -->
+        <div class="report-section" id="rpt-vital-flags-section">
+          <h2 class="report-section-title">⚠️ Vital Flags for Receiving Physician</h2>
+          <ul class="vital-flags-list" id="rpt-vital-flags">
+            <li class="vital-flag-item">Requires immediate cardiac evaluation (12-lead ECG, troponin, CXR)</li>
+            <li class="vital-flag-item">Patient has known hypertension and diabetes — elevated cardiovascular risk</li>
+            <li class="vital-flag-item">Currently on Aspirin 81mg — note for anticoagulation decisions</li>
+            <li class="vital-flag-item">AI triage confidence: 0.88 — clinical judgment must override AI assessment</li>
+          </ul>
+        </div>
+
+        <!-- Report Footer Disclaimer -->
+        <div class="report-footer-disclaimer">
+          <div class="report-footer-line"></div>
+          <p><strong>⚕️ IMPORTANT DISCLAIMER:</strong> This report was generated by an AI triage system (MedTriage AI v1.0) using natural language processing (BioBERT NER) and knowledge graph reasoning. It is intended solely as decision support for qualified healthcare professionals. This tool does NOT replace clinical examination, laboratory investigations, or physician judgment. All diagnoses and treatment decisions must be made by licensed medical professionals. In the event of a life-threatening emergency, call 911 (US) or 108 (India) immediately.</p>
+          <p class="report-footer-sub">MedTriage AI · Session: <span id="rpt-footer-session">Demo</span> · Generated: <span id="rpt-footer-date">29 Mar 2026</span> · Not for clinical use without physician review.</p>
+        </div>
+
+      </div><!-- /.report-document -->
+    </div><!-- /#tab-report -->
+
+  </main><!-- /.main-content -->
 
   <!-- Toast Container -->
   <div class="toast-container" id="toast-container"></div>
 
+  <!-- Scripts -->
   <script src="app.js"></script>
 </body>
 </html>

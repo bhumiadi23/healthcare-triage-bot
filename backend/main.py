@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.openapi.docs import get_swagger_ui_html
 from database import connect_db, close_db
-from routers import chat, triage, report, history, graph
+from routers import chat, triage, report, history, graph, hospitals
 
 
 async def _connect_neo4j_safe(app: FastAPI):
@@ -66,11 +66,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(chat.router,    prefix="/chat",    tags=["Chat"])
-app.include_router(triage.router,  prefix="/triage",  tags=["Triage"])
-app.include_router(report.router,  prefix="/report",  tags=["Report"])
-app.include_router(history.router, prefix="/history", tags=["History"])
-app.include_router(graph.router,   prefix="/graph",   tags=["Knowledge Graph"])
+app.include_router(chat.router,      prefix="/chat",      tags=["Chat"])
+app.include_router(triage.router,    prefix="/triage",    tags=["Triage"])
+app.include_router(report.router,    prefix="/report",    tags=["Report"])
+app.include_router(history.router,   prefix="/history",   tags=["History"])
+app.include_router(graph.router,     prefix="/graph",     tags=["Knowledge Graph"])
+app.include_router(hospitals.router, prefix="/hospitals", tags=["Hospitals"])
 
 
 @app.get("/health", tags=["Health"])
